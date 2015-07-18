@@ -3,44 +3,49 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
 # parameters, set through measurement and making assumptions
-U1 = 1 # mg
-L2 = 1. # mass
-C5 = 3. # spring const
-R6 = 1.2 # friction relation
-C8 = 5. # spring const
-L9 = 1. # mass
+U1 = 5.
+I2 = 1.
+C4 = 1.
+TF = 0.25
+I7 = 1.
+R8 = 1.1
+C9 = 1.
 
 def f(y, t):
-	P2i = y[0]
-	Q5i = y[1]
-	Q8i = y[2]
-	P9i = y[3]
+    P2i = y[0]
+    Q4i = y[1]
+    P7i = y[2]
+    Q9i = y[3]
+    X2i = y[4]
 
-	f0 = U1 - Q5i/C5 - R6*P2i/C5 + R6*P9i/L9
-	f1 = P2i/C5 - P9i/L9
-	f2 = P9i/L9
-	f3 = -Q5i/C5 - R6*P2i/L2 + R6*P9/L9 - Q8i/C8
-	return [f0, f1, f2, f3]
+    f0 = U1 - Q4i/C4
+    f1 = P2i/I2 - P7i/(TF*I7)
+    f2 = TF*Q4i/C4 - P7i*R8 - Q9i/C9
+    f3 = P7i/I7
+    f4 = P2i/I2
+    return [f0, f1, f2, f3, f4]
 
 # Initial conditions
 P2 = 0. # initial velocity
-Q5 = 0. # initial force
-Q8 = 0. # initial force
-P9 = 0. # initial velocity
-y0 = [P2, Q5, Q8, P9]
+Q4 = 0. # initial force
+P7 = 0. # initial force
+Q9 = 0. # initial velocity
+X2 = 0.
+y0 = [P2, Q4, P7, Q9, X2]
 t = np.linspace(0, 100, 2000)
 
 # solve the DEs
 soln = odeint(f, y0, t)
 P2 = soln[:, 0]
-Q2 = soln[:, 1]
-Q8 = soln[:, 2]
-P9 = soln[:, 3]
+Q4 = soln[:, 1]
+P7 = soln[:, 2]
+Q9 = soln[:, 3]
+X2 = soln[:, 3]
 
 plt.figure()
-plt.plot(t, -Q2, label='Inertia 2')
+plt.plot(t, -X2, label='Inertia 2')
 plt.xlabel('Time in seconds')
 plt.ylabel('kg m/s')
-plt.title('Momentum of Hanging Mass during initial oscillation')
+plt.title('Position of the Hanging Mass during initial oscillation')
 plt.legend(loc=0)
 plt.show()
