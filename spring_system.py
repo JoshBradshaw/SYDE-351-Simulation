@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
+import math
 
 # parameters, set through measurement and making assumptions
 U1 = 1.
@@ -12,21 +13,32 @@ R9 = 20
 C11 = 1.
 R12 = 1.
 
+# slip is given by X7 - X9
+
 def f(y, t):
+    """the system of differential equaitons derived from the bond graph model"""
     P2i = y[0]
     Q4i = y[1]
     P7i = y[2]
     Q11i = y[3]
     X2i = y[4]
 
-    f0 = U1 - Q4i/C4
-    f1 = P2i/I2 - P7i/(TF*I7)
-    f2 = Q4i/(TF*C4) - R9 *(P7i/I7 + Q11i/(R12*C11))
-    f3 = P7i/I7 - Q11i/(R12*C11)
-    f4 = P2i/I2
-    f5 = P7i/I7
-    f6 = P7i/I7 + Q11i/(R12*C11)
-    return [f0, f1, f2, f3, f4, f5, f6]
+    P2_ = U1 - Q4i/C4
+    Q4_ = P2i/I2 - P7i/(TF*I7)
+    P7_ = Q4i/(TF*C4) - R9 *(P7i/I7 + Q11i/(R12*C11))
+    Q11_ = P7i/I7 - Q11i/(R12*C11)
+    X2_ = P2i/I2
+    X7_ = P7i/I7
+    X9_ = P7i/I7 + Q11i/(R12*C11)
+    return [P2_, Q4_, P7_, Q11_, X2_, X7_, X9_]
+
+def u_k(vr, vt):
+    """4th order model of the bushing friction"""
+    A = 1.
+    B1 = 2.
+    B2 = 2.
+    return math.tanh(vr/vt) + (B1 * (vr/vt))/(1 + B2*(vr/vt)**4)
+
 
 # Initial conditions
 P2 = 0. # initial velocity
