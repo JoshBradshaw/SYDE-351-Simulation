@@ -1,17 +1,19 @@
+from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import math
 
 # parameters, set through measurement and making assumptions
-U1 = 1.
-I2 = 1.
-C4 = 1.
-TF = 1.
-I7 = 1.
-R9 = 20
-C11 = 1.
-R12 = 1.
+SE_1 = 2.94
+I_2 = 0.3
+C_4 = 136.0
+TF_5 = 4092.0
+I_7 = 0.00002405 # revolution
+R_9 = 0.001 # no slip for now
+R_11 = 1.0 # 
+TF_12 = 0.00024
+C_13 = 15.0
 
 # slip is given by X7 - X9
 
@@ -20,17 +22,15 @@ def f(y, t):
     P2i = y[0]
     Q4i = y[1]
     P7i = y[2]
-    Q11i = y[3]
-    X2i = y[4]
+    Q13i = y[3]
 
-    P2_ = U1 - Q4i/C4
-    Q4_ = P2i/I2 - P7i/(TF*I7)
-    P7_ = Q4i/(TF*C4) - R9 *(P7i/I7 + Q11i/(R12*C11))
-    Q11_ = P7i/I7 - Q11i/(R12*C11)
-    X2_ = P2i/I2
-    X7_ = P7i/I7
-    X9_ = P7i/I7 + Q11i/(R12*C11)
-    return [P2_, Q4_, P7_, Q11_, X2_, X7_, X9_]
+    v11 = (1.0/(1.0 + R_9/R_11)) * ((R_9*P7i/(R_11*I_7)) - TF_12*Q13i/(R_11*C_13))
+    P2_ = SE_1 - Q4i/C_4
+    Q4_ = P2i/I_2 - P7i/(TF_5 * I_7)
+    P7_ = Q4i/(C_4*TF_5) - R_9*(P7i/I_7 - v11)
+    Q13_ = v11/TF_12
+
+    return [P2_, Q4_, P7_, Q13_]
 
 def u_k(vr, vt):
     """4th order model of the bushing friction"""
@@ -41,31 +41,25 @@ def u_k(vr, vt):
 
 
 # Initial conditions
-P2 = 0. # initial velocity
+P2 = 0 # initial velocity
 Q4 = 0. # initial force
 P7 = 0. # initial force
-Q11 = 0. # initial velocity
-X2 = 0.
-X7 = 0.
-X9 = 0.
-y0 = [P2, Q4, P7, Q11, X2, X7, X9]
-t = np.linspace(0, 100, 2000)
+Q13 = 0. # initial velocity
+y0 = [P2, Q4, P7, Q13]
+t = np.linspace(0, 1000, 2000)
 
 # solve the DEs
 soln = odeint(f, y0, t)
 P2 = soln[:, 0]
 Q4 = soln[:, 1]
 P7 = soln[:, 2]
-Q11 = soln[:, 3]
-X2 = soln[:, 4]
-X7 = soln[:, 5]
-X9 = soln[:, 6]
+Q13 = soln[:, 3]
 
 plt.figure()
-plt.plot(t, X2, 'r--')
+plt.plot(t, Q13, 'r--')
 
 plt.xlabel('Time in seconds')
 plt.ylabel('kg m/s')
-plt.title('Position of the Hanging Mass during initial oscillation')
+plt.title('Position of the Hanging Mass')
 plt.legend(loc=0)
 plt.show()
