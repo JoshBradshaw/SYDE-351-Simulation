@@ -4,18 +4,18 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import math
 
-# parameters, set through measurement and making assumptions
-SE_1 = 2.94 # N
-I_2 = 0.3 # kg
-C_4 = 1./136. # m/N
-TF_5 = 71 # rad/m
-I_7 = 0.002 # revolution
-R_9 = 1.6 # no slip for now
-R_11 = 1.6 # 
-TF_12 = 0.014 # m/rad
-C_13 = 1/15. # m/N
+g = 9.8 # m/s^2
+M2 = 0.3 # kg
+K4 = 136 #N/m
+Rdisk = 0.014 # m
+J7 = 0.00002
+c9 = 0.02
+c11 = 0.002
+K13 = 15 # n/m
+
 
 # slip is given by X7 - X9
+actual_ratios = []
 
 def f(y, t):
     """the system of differential equaitons derived from the bond graph model"""
@@ -25,25 +25,26 @@ def f(y, t):
     Q13i = y[3]
     X1_ = y[4]
 
-    v11 = (R_9*P7i/I_7 - TF_12*Q13i/C_13)/(R_11+R_9)
-    P2_ = SE_1 - Q4i/C_4
-    Q4_ = P2i/I_2 - P7i/(TF_5 * I_7)
-    P7_ = Q4i/(C_4*TF_5) - R_9*(P7i/I_7 - v11)
-    Q13_ = v11*TF_12
-    X1_ = P2_/I_2
-
+    w11 = (c9*P7i/J7 - Rdisk*Q13i*K13)/(c11 + c9)
+    P2_ = M2*g - Q4i*K4
+    Q4_ = P2i/M2 - Rdisk*P7i/J7
+    P7_ = Rdisk*Q4i*K4 - c9*(P7i/J7 - w11)
+    Q13_ = Rdisk*w11
+    X1_ = P2_/M2
+    actual_ratios.append((P7i/J7)/J7)
     return [P2_, Q4_, P7_, Q13_, X1_]
 
-def u_k(vr, vt):
+def u_k(wr_wt):
     """4th order model of the bushing friction"""
-    A = 1.
+    A = 0.2
     B1 = 2.
-    B2 = 2.
-    return math.tanh(vr/vt) + (B1 * (vr/vt))/(1 + B2*(vr/vt)**4)
+    B2 = 3.
+    return A*(math.tanh(wr_wt) + (B1 * (wr_wt))/(1 + B2*(wr_wt)**4))
+
 
 
 # Initial conditions
-P2 = 3. # initial velocity
+P2 = 1. # initial velocity
 Q4 = 0. # initial force
 P7 = 0. # initial force
 Q13 = 0. # initial velocity
@@ -60,10 +61,17 @@ Q13 = soln[:, 3]
 X1 = soln[:, 4]
 
 plt.figure()
-plt.plot(t, X1, 'r--')
+actual_ratios = np.linspace(-50, 50, 2000)
+uk_vals = [u_k(ratio) for ratio in actual_ratios]
 
-plt.xlabel('Time in seconds')
-plt.ylabel('kg m/s')
-plt.title('Position of the Hanging Mass')
-plt.legend(loc=0)
+plt.plot(actual_ratios, uk_vals, 'r--')
 plt.show()
+
+# plt.figure()
+# plt.plot(t, X1, 'r--')
+
+# plt.xlabel('Time in seconds')
+# plt.ylabel('cm')
+# plt.title('Position of the Hanging Mass')
+# plt.legend(loc=0)
+# plt.show()
