@@ -2,21 +2,20 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
-from pprint import pprint
 import math
 
 g = 9.8 # m/s^2
 M2 = 0.3 # kg
-K4 = 136 #N/m
+K4 = 150 #N/m
 Rdisk = 0.014 # m
 J7 = 0.00002
 J12 = 0.00002
-c9 = 10
+c9 = 1
 c11 = 10
-K14 = 15 # n/m
+K14 = 20 # n/m
 
 # slip is given by X7 - X9
-friction = []
+force_values = []
 
 def f(y, t):
     """the system of differential equaitons derived from the bond graph model"""
@@ -26,27 +25,38 @@ def f(y, t):
     P12i = y[3]
     Q14i = y[4]
     X2 = y[5]
+    X7 = y[6]
+    X10 = y[7]
 
     wr = P7i/J7
     wt = P12i/J12
-    #print "u_k(wr, wt) {}".format(u_k(wr, wt))
 
-    P2_ = M2*g - Q4i*K4
+    P2_ = M2*g - nl_k4(Q4i)
     Q4_ = P2i/M2 - Rdisk*P7i/J7
-    P7_ = Q4i*K4 - u_k(wr, wt)
-    P12_ = u_k(wr, wt) - Rdisk*Q14i*K14 - P12i*c11/J12
+    P7_ = nl_k4(Q4i) - u_k(wr, wt)
+    P12_ = u_k(wr, wt) - Rdisk*nl_k14(Q14i) - P12i*c11/J12
     Q14_ = Rdisk*P12i/J12
     X5_ = P2_/M2
-    print "c9*(wr-wt): {} u_k: {}".format(c9*(wr-wt), u_k(wr, wt))
     return [P2_, Q4_, P7_, P12_, Q14_, X5_, wr, wt]
 
 def u_k(wr, wt):
     """4th order model of the bushing friction"""
-    A = 0.364
-    B1 = 0.47
+    A = 3.65 # 3.7
+    B1 = 0.8
     B2 = 0.5
-    return math.copysign(A*(math.tanh(wr/wt) + (B1 * (wr/wt))/(1 + B2*(wr/wt)**4)), wr-wt)
+    return A*(math.tanh(wr/wt) + (B1 * (wr/wt))/(1 + B2*(wr/wt)**4))
 
+def nl_k4(q):
+    if q >= 0:
+        return K4 * q
+    else:
+        return 0
+
+def nl_k14(q):
+    if q >= 0:
+        return K14 * q
+    else:
+        return 0
 
 # Initial conditions
 P2 = 1. # initial velocity
@@ -55,9 +65,10 @@ P7 = 0.00000001 # initial force
 P12 = 0.000000001
 Q14 = 0. # initial velocity
 X2 = 0.
-wr = 0.
-wt = 0.
-y0 = [P2, Q4, P7, P12, Q14, X2, wr, wt]
+uk = 0.
+x7 = 0.
+x9 = 0.
+y0 = [P2, Q4, P7, P12, Q14, X2, x7, x9]
 t = np.linspace(0, 10, 4000)
 
 # solve the DEs
@@ -68,16 +79,17 @@ P7 = soln[:, 2]
 P12 = soln[:, 3]
 Q13 = soln[:, 4]
 X2 = soln[:, 5]
-wr = soln[:, 6]
-wt = soln[:, 7]
+x7 = soln[:, 6]
+x9 = soln[:, 7]
 
-plt.figure()
-plt.plot(t, wr, 'r--', t, wt, 'b--', t, wr-wt, 'g--')
 plt.figure()
 plt.plot(t, X2, 'r--')
 
+plt.figure()
+plt.plot(t, x7, 'r--', t, x9, 'b--')
+
 plt.xlabel('Time in seconds')
-plt.ylabel('cm')
+plt.ylabel('m')
 plt.title('Position of the Hanging Mass')
 plt.legend(loc=0)
 plt.show()
